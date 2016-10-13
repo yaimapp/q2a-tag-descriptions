@@ -1,7 +1,7 @@
 <?php
 
 class qa_tag_descriptions_widget {
-	
+
 	function allow_template($template)
 	{
 		return ($template=='tag');
@@ -11,24 +11,26 @@ class qa_tag_descriptions_widget {
 	{
 		return true;
 	}
-	
+
 	function output_widget($region, $place, $themeobject, $template, $request, $qa_content)
 	{
 		require_once QA_INCLUDE_DIR.'qa-db-metas.php';
-		
+
 		$parts=explode('/', $request);
 		$tag=$parts[1];
-		
+
 		$description=qa_db_tagmeta_get($tag, 'description');
 		if (!(qa_opt('plugin_tag_desc_sidebar_html'))) $description=qa_html($description);
 		$editurlhtml=qa_path_html('tag-edit/'.$tag);
-		
+
 		$allowediting=!qa_user_permit_error('plugin_tag_desc_permit_edit');
-		
+
 		if (strlen($description)) {
-			echo '<SPAN CLASS="qa-tag-description" STYLE="font-size:'.(int)qa_opt('plugin_tag_desc_font_size').'px;">';
-			echo $description;
-			echo '</SPAN>';
+			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/template.html';
+			$template= file_get_contents($path);
+			$params = array('^description' => $description);
+			$themeobject->output(strtr($template, $params));
+
 			if ($allowediting)
 				echo ' - <A HREF="'.$editurlhtml.'">edit</A>';
 
@@ -40,17 +42,15 @@ class qa_tag_descriptions_widget {
 	{
 		if ($option=='plugin_tag_desc_max_len')
 			return 250;
-		
-		if ($option=='plugin_tag_desc_font_size')
-			return 18;
+
 		if ($option=='plugin_tag_desc_sidebar_html')
-			return 1;			
+			return 1;
 		if ($option=='plugin_tag_desc_enable_icon')
-			return 1;			
+			return 1;
 		if ($option=='plugin_tag_desc_icon_height')
-			return 18;			
+			return 18;
 		if ($option=='plugin_tag_desc_icon_width')
-			return 18;			
+			return 18;
 		if ($option=='plugin_tag_desc_permit_edit') {
 			require_once QA_INCLUDE_DIR.'qa-app-options.php';
 			return QA_PERMIT_EXPERTS;
@@ -67,10 +67,9 @@ class qa_tag_descriptions_widget {
 		$permitoptions=qa_admin_permit_options(QA_PERMIT_USERS, QA_PERMIT_SUPERS, false, false);
 
 		$saved=false;
-		
+
 		if (qa_clicked('plugin_tag_desc_save_button')) {
 			qa_opt('plugin_tag_desc_max_len', (int)qa_post_text('plugin_tag_desc_ml_field'));
-			qa_opt('plugin_tag_desc_font_size', (int)qa_post_text('plugin_tag_desc_fs_field'));
 			qa_opt('plugin_tag_desc_permit_edit', (int)qa_post_text('plugin_tag_desc_pe_field'));
 			qa_opt('plugin_tag_desc_enable_icon', (int)qa_post_text('plugin_tag_desc_enable_icon_field'));
 			qa_opt('plugin_tag_desc_icon_height', (int)qa_post_text('plugin_tag_desc_icon_height_field'));
@@ -83,7 +82,7 @@ class qa_tag_descriptions_widget {
 			));
 		return array(
 			'ok' => $saved ? 'Tag descriptions settings saved' : null,
-			
+
 			'fields' => array(
 				array(
 					'label' => 'Maximum length of tooltips:',
@@ -105,7 +104,7 @@ class qa_tag_descriptions_widget {
 					'type' => 'number',
 					'value' => (int)qa_opt('plugin_tag_desc_icon_height'),
 					'tags' => 'NAME="plugin_tag_desc_icon_height_field"',
-				),				
+				),
 				array(
 					'id' => 'plugin_tag_desc_icon_width',
 					'label' => 'image width :',
@@ -120,13 +119,6 @@ class qa_tag_descriptions_widget {
 					'value' => (int)qa_opt('plugin_tag_desc_sidebar_html'),
 					'tags' => 'NAME="plugin_tag_desc_sidebar_html_field"',
 				),
-				array(
-					'label' => 'Starting font size:',
-					'type' => 'number',
-					'value' => (int)qa_opt('plugin_tag_desc_font_size'),
-					'suffix' => 'pixels',
-					'tags' => 'NAME="plugin_tag_desc_fs_field"',
-				),
 
 				array(
 					'label' => 'Allow editing:',
@@ -136,7 +128,7 @@ class qa_tag_descriptions_widget {
 					'tags' => 'NAME="plugin_tag_desc_pe_field"',
 				),
 			),
-			
+
 			'buttons' => array(
 				array(
 					'label' => 'Save Changes',
