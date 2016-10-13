@@ -13,6 +13,16 @@ class qa_html_theme_layer extends qa_html_theme_base
 		}
 		qa_html_theme_base::head_metas();
 	}
+
+	function head_css() {
+		if ($this->template === 'tag') {
+			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/style.css';
+			$css = file_get_contents($path);
+			$this->output($css);
+		}
+		qa_html_theme_base::head_css();
+  }
+
 	function post_tag_item($taghtml, $class)
 	{
 		require_once QA_INCLUDE_DIR.'qa-util-string.php';
