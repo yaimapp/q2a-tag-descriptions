@@ -9,4 +9,7 @@ return array(
 	'edit_desc_for_x' => '^ タグの説明文編集',
 	'save_desc_button' => '保存する',
 	'create_desc_link' => 'タグの説明文を作成する',
+	'similar_tag_title' => '^に関連するタグ',
+	'recent_title' => '最近の質問',
+	'edit' => '編集',
 );
