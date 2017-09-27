@@ -20,6 +20,10 @@ class qa_tag_descriptions_widget {
 		$tag=$parts[1];
 
 		$description=qa_db_tagmeta_get($tag, 'description');
+		$title=qa_db_tagmeta_get($tag, 'title');
+		$headline=qa_db_tagmeta_get($tag, 'headline');
+		$note=qa_db_tagmeta_get($tag, 'note');
+		$imageurl=qa_db_tagmeta_get($tag, 'bg');
 		if (!(qa_opt('plugin_tag_desc_sidebar_html'))) $description=qa_html($description);
 		$editurlhtml=qa_path_html('tag-edit/'.$tag);
 
@@ -28,7 +32,14 @@ class qa_tag_descriptions_widget {
 		if (strlen($description)) {
 			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/template.html';
 			$template= file_get_contents($path);
-			$params = array('^description' => $description);
+			$params = array(
+				'^imageurl' => $imageurl,
+				'^tag' => $tag,
+				'^title' => $title,
+				'^description' => $description,
+				'^headline' => $headline,
+				'^note' => $note,
+			);
 			$themeobject->output(strtr($template, $params));
 
 			if ($allowediting)
@@ -48,9 +59,9 @@ class qa_tag_descriptions_widget {
 		if ($option=='plugin_tag_desc_enable_icon')
 			return 1;
 		if ($option=='plugin_tag_desc_icon_height')
-			return 18;
+			return 200;
 		if ($option=='plugin_tag_desc_icon_width')
-			return 18;
+			return 624;
 		if ($option=='plugin_tag_desc_permit_edit') {
 			require_once QA_INCLUDE_DIR.'qa-app-options.php';
 			return QA_PERMIT_EXPERTS;
