@@ -14,7 +14,7 @@ class qa_tag_descriptions_edit_page {
 		$parts=explode('/', $request);
 		$tag=$parts[1];
 		
-		$qa_content=qa_content_prepare();			
+		$qa_content=qa_content_prepare();
 		$qa_content['title']=qa_lang_html_sub('plugin_tag_desc/edit_desc_for_x', qa_html($tag));
 		
 		if (qa_user_permit_error('plugin_tag_desc_permit_edit')) {
@@ -28,9 +28,11 @@ class qa_tag_descriptions_edit_page {
 			require_once QA_INCLUDE_DIR.'qa-util-string.php';
 			
 			$taglc=qa_strtolower($tag);
+			qa_db_tagmeta_set($taglc, 'bg', qa_post_text('tagbg'));
 			qa_db_tagmeta_set($taglc, 'title', qa_post_text('tagtitle'));
 			qa_db_tagmeta_set($taglc, 'description', qa_post_text('tagdesc'));
-			qa_db_tagmeta_set($taglc, 'icon', qa_post_text('tagicon'));
+			qa_db_tagmeta_set($taglc, 'headline', qa_post_text('taghead'));
+			qa_db_tagmeta_set($taglc, 'note', qa_post_text('tagnote'));
 			qa_redirect('tag/'.$tag);
 		}
 
@@ -42,25 +44,39 @@ class qa_tag_descriptions_edit_page {
 			
 			'fields' => array(		
 				array(
-					'label' => 'Title:',
+					'label' => qa_lang_html('plugin_tag_desc/bg_label'),
+					'type' => 'text',
+					'rows' => 1,
+					'tags' => 'NAME="tagbg" ID="tagbg"',
+					'value' => qa_html(qa_db_tagmeta_get($tag, 'bg')),
+				),
+				array(
+					'label' => qa_lang_html('plugin_tag_desc/title_label'),
 					'type' => 'text',
 					'rows' => 2,
 					'tags' => 'NAME="tagtitle" ID="tagtitle"',
 					'value' => qa_html(qa_db_tagmeta_get($tag, 'title')),
 				),
 				array(
-					'label' => 'Description:',
+					'label' => qa_lang_html('plugin_tag_desc/description_label'),
 					'type' => 'text',
-					'rows' => 4,
+					'rows' => 5,
 					'tags' => 'NAME="tagdesc" ID="tagdesc"',
 					'value' => qa_html(qa_db_tagmeta_get($tag, 'description')),
 				),
 				array(
-					'label' => 'Icon image:',
+					'label' => qa_lang_html('plugin_tag_desc/headline_label'),
 					'type' => 'text',
-					'rows' => 1,
-					'tags' => 'NAME="tagicon" ID="tagicon"',
-					'value' => qa_html(qa_db_tagmeta_get($tag, 'icon')),
+					'rows' => 2,
+					'tags' => 'NAME="taghead" ID="taghead"',
+					'value' => qa_html(qa_db_tagmeta_get($tag, 'headline')),
+				),
+				array(
+					'label' => qa_lang_html('plugin_tag_desc/note_label'),
+					'type' => 'text',
+					'rows' => 4,
+					'tags' => 'NAME="tagnote" ID="tagnote"',
+					'value' => qa_html(qa_db_tagmeta_get($tag, 'note')),
 				),
 			),			
 			'buttons' => array(

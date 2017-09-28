@@ -1,5 +1,7 @@
 <?php
 
+require_once QA_PLUGIN_DIR.'q2a-tag-descriptions/tag-desc-db.php';
+
 class qa_tag_descriptions_widget {
 
 	function allow_template($template)
@@ -19,23 +21,8 @@ class qa_tag_descriptions_widget {
 		$parts=explode('/', $request);
 		$tag=$parts[1];
 
-		$description=qa_db_tagmeta_get($tag, 'description');
-		if (!(qa_opt('plugin_tag_desc_sidebar_html'))) $description=qa_html($description);
-		$editurlhtml=qa_path_html('tag-edit/'.$tag);
-
-		$allowediting=!qa_user_permit_error('plugin_tag_desc_permit_edit');
-
-		if (strlen($description)) {
-			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/template.html';
-			$template= file_get_contents($path);
-			$params = array('^description' => $description);
-			$themeobject->output(strtr($template, $params));
-
-			if ($allowediting)
-				echo ' - <A HREF="'.$editurlhtml.'">edit</A>';
-
-		} elseif ($allowediting)
-			echo '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/create_desc_link').'</A>';
+		$html = $this->get_tag_description($tag);
+		$themeobject->output($html);
 	}
 
 	function option_default($option)
@@ -48,9 +35,9 @@ class qa_tag_descriptions_widget {
 		if ($option=='plugin_tag_desc_enable_icon')
 			return 1;
 		if ($option=='plugin_tag_desc_icon_height')
-			return 18;
+			return 200;
 		if ($option=='plugin_tag_desc_icon_width')
-			return 18;
+			return 624;
 		if ($option=='plugin_tag_desc_permit_edit') {
 			require_once QA_INCLUDE_DIR.'qa-app-options.php';
 			return QA_PERMIT_EXPERTS;
@@ -74,6 +61,7 @@ class qa_tag_descriptions_widget {
 			qa_opt('plugin_tag_desc_enable_icon', (int)qa_post_text('plugin_tag_desc_enable_icon_field'));
 			qa_opt('plugin_tag_desc_icon_height', (int)qa_post_text('plugin_tag_desc_icon_height_field'));
 			qa_opt('plugin_tag_desc_icon_width', (int)qa_post_text('plugin_tag_desc_icon_width_field'));
+			qa_opt('plugin_tag_desc_default_image', qa_post_text('plugin_tag_desc_default_image'));
 			$saved=true;
 		}
 			qa_set_display_rules($qa_content, array(
@@ -119,6 +107,13 @@ class qa_tag_descriptions_widget {
 					'value' => (int)qa_opt('plugin_tag_desc_sidebar_html'),
 					'tags' => 'NAME="plugin_tag_desc_sidebar_html_field"',
 				),
+				array(
+					'id' => 'plugin_tag_desc_default_image',
+					'label' => 'Default image:',
+					'type' => 'text',
+					'value' => qa_opt('plugin_tag_desc_default_image'),
+					'tags' => 'NAME="plugin_tag_desc_default_image"',
+				),
 
 				array(
 					'label' => 'Allow editing:',
@@ -136,6 +131,101 @@ class qa_tag_descriptions_widget {
 				),
 			),
 		);
+	}
+
+	private function get_tag_description($tag)
+	{
+		$description=qa_db_tagmeta_get($tag, 'description');
+		$allowediting=!qa_user_permit_error('plugin_tag_desc_permit_edit');
+		$editurlhtml=qa_path_html('tag-edit/'.$tag);
+		if ($allowediting) {
+			$editing = '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/edit').'</A>';
+		} else {
+			$editing = '';
+		}
+		if (strlen($description)) {
+			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/html/description_template.html';
+			$template= file_get_contents($path);
+			$params = $this->get_params($tag, $description, $editing);
+			return strtr($template, $params);
+		} elseif ($allowediting) {
+			return '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/create_desc_link').'</A>';
+		}
+
+	}
+
+	private function get_params($tag, $description, $editing)
+	{
+
+		$title=qa_db_tagmeta_get($tag, 'title');
+		$headline=qa_db_tagmeta_get($tag, 'headline');
+		$note=qa_db_tagmeta_get($tag, 'note');
+		$imageurl=qa_db_tagmeta_get($tag, 'bg');
+		$default_image=qa_opt('plugin_tag_desc_default_image');
+		if (empty($imageurl)) {
+			// デフォルト画像
+			$imageurl = $default_image;
+		}
+		$similar_tag=$this->get_similar_tag($tag);
+		$dates = tag_desc_db::get_recent_tag_date($tag);
+		$recent_date = @$dates['prefix'].@$dates['data'].@$dates['suffix'];
+		return array(
+			'^imageurl' => $imageurl,
+			'^tag' => $tag,
+			'^title' => $title,
+			'^description' => $description,
+			'^headline' => $headline,
+			'^note' => $note,
+			'^similar_tag' => $similar_tag,
+			'^editing' => $editing,
+			'^recent_title' => qa_lang_html('plugin_tag_desc/recent_title'),
+			'^recent_date' => $recent_date,
+		);
+
+	}
+
+	/*
+	 * 関連するタグのHTMLを返す
+	 */
+	private function get_similar_tag($tag)
+	{
+
+		$stdb = new tag_desc_db();
+		$tagstring = $stdb->get_similar_tag_words($tag);
+		if(!empty($tagstring)) {
+			$tags = qa_tagstring_to_tags($tagstring);
+			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/html/similar_tag_list.html';
+			$template = file_get_contents($path); 
+			$tag_list = $this->get_similar_tag_list($tags);
+			$params = array(
+				'^title' => qa_lang_html_sub('plugin_tag_desc/similar_tag_title', $tag),
+				'^list' => $tag_list,
+			);
+			$html = strtr($template, $params);
+			return $html;
+		} else {
+			return '';
+		}
+	}
+
+	/*
+	 * 関連するタグリストのHTMLを返す
+	 */
+	private function get_similar_tag_list($tags)
+	{
+		$html = '';
+		if(!empty($tags)) {
+			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/html/similar_tag_item.html';
+			$template = file_get_contents($path);
+			foreach ($tags as $tag) {
+				$params = array(
+					'^url' => qa_path_html('tag/'.$tag),
+					'^tag' => $tag,
+				);
+				$html .= strtr($template, $params);
+			}
+		}
+		return $html;
 	}
 
 }
