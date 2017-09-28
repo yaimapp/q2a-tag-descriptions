@@ -1,6 +1,6 @@
 <?php
 
-class desc_similar_tag_db
+class tag_desc_db
 {
 	const SIMILAR_TAG_IDS = 'similar_tag_ids';
 	const SIMILAR_TAG_WORDS = 'similar_tag_words';
@@ -162,6 +162,29 @@ FROM ^tagmetas WHERE tag = $ AND title = $
 		$sql = "SELECT word FROM ^words WHERE wordid = #";
 
 		return qa_db_read_one_value(qa_db_query_sub($sql, $wordid));
+	}
+
+	/*
+	 * 最近の質問の投稿日を返す
+	 */
+	public static function get_recent_tag_date($tag)
+	{
+		$userid = qa_get_logged_in_userid();
+		$selectspec = qa_db_tag_recent_qs_selectspec($userid, $tag, 0, false, 1);
+		$questions = qa_db_single_select($selectspec);
+
+		if(!empty($questions)) {
+			$question = current($questions);
+			$fulldatedays = qa_opt('show_full_date_days');
+			$dates = qa_when_to_html($question['created'], $fulldatedays);
+			return $dates;
+		} else {
+			return array(
+				'prefix' => '',
+				'data' => '',
+				'suffix' => '',
+			);
+		}
 	}
 
 }

@@ -1,6 +1,6 @@
 <?php
 
-require_once QA_PLUGIN_DIR.'q2a-tag-descriptions/similar-tag-db.php';
+require_once QA_PLUGIN_DIR.'q2a-tag-descriptions/tag-desc-db.php';
 
 class qa_tag_descriptions_widget {
 
@@ -136,10 +136,11 @@ class qa_tag_descriptions_widget {
 	private function get_tag_description($tag)
 	{
 		$description=qa_db_tagmeta_get($tag, 'description');
+		$allowediting=!qa_user_permit_error('plugin_tag_desc_permit_edit');
 		if (strlen($description)) {
 			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/html/description_template.html';
 			$template= file_get_contents($path);
-			$params = $this->get_params($tag, $description);
+			$params = $this->get_params($tag, $description, $allowediting);
 			return strtr($template, $params);
 		} elseif ($allowediting) {
 			return '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/create_desc_link').'</A>';
@@ -147,8 +148,9 @@ class qa_tag_descriptions_widget {
 
 	}
 
-	private function get_params($tag, $description)
+	private function get_params($tag, $description, $allowediting)
 	{
+
 		$title=qa_db_tagmeta_get($tag, 'title');
 		$headline=qa_db_tagmeta_get($tag, 'headline');
 		$note=qa_db_tagmeta_get($tag, 'note');
@@ -158,16 +160,15 @@ class qa_tag_descriptions_widget {
 			// デフォルト画像
 			$imageurl = $default_image;
 		}
-
 		$similar_tag=$this->get_similar_tag($tag);
 		$editurlhtml=qa_path_html('tag-edit/'.$tag);
-
-		$allowediting=!qa_user_permit_error('plugin_tag_desc_permit_edit');
 		if ($allowediting) {
 			$editing = '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/edit').'</A>';
 		} else {
 			$editing = '';
 		}
+		$dates = tag_desc_db::get_recent_tag_date($tag);
+		$recent_date = @$dates['prefix'].@$dates['data'].@$dates['suffix'];
 		return array(
 			'^imageurl' => $imageurl,
 			'^tag' => $tag,
@@ -178,7 +179,7 @@ class qa_tag_descriptions_widget {
 			'^similar_tag' => $similar_tag,
 			'^editing' => $editing,
 			'^recent_title' => qa_lang_html('plugin_tag_desc/recent_title'),
-			'^recent_date' => '2 日前',
+			'^recent_date' => $recent_date,
 		);
 
 	}
@@ -188,7 +189,8 @@ class qa_tag_descriptions_widget {
 	 */
 	private function get_similar_tag($tag)
 	{
-		$stdb = new desc_similar_tag_db();
+
+		$stdb = new tag_desc_db();
 		$tagstring = $stdb->get_similar_tag_words($tag);
 		if(!empty($tagstring)) {
 			$tags = qa_tagstring_to_tags($tagstring);

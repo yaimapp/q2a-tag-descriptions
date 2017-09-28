@@ -6,10 +6,10 @@ if (!defined('QA_VERSION')) {
 
 error_log('-----------------------------------');
 error_log('script start');
-require_once QA_PLUGIN_DIR.'q2a-tag-descriptions/similar-tag-db.php';
+require_once QA_PLUGIN_DIR.'q2a-tag-descriptions/tag-desc-db.php';
 $start = microtime(true);
 if (qa_using_tags()) {
-	$stdb = new desc_similar_tag_db();;
+	$stdb = new tag_desc_db();;
 	$cnt = $stdb->update_all_similar_gats();
 	error_log('処理件数: ' . $cnt);
 }
