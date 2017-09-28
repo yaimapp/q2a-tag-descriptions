@@ -137,10 +137,16 @@ class qa_tag_descriptions_widget {
 	{
 		$description=qa_db_tagmeta_get($tag, 'description');
 		$allowediting=!qa_user_permit_error('plugin_tag_desc_permit_edit');
+		$editurlhtml=qa_path_html('tag-edit/'.$tag);
+		if ($allowediting) {
+			$editing = '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/edit').'</A>';
+		} else {
+			$editing = '';
+		}
 		if (strlen($description)) {
 			$path = QA_PLUGIN_DIR.'q2a-tag-descriptions/html/description_template.html';
 			$template= file_get_contents($path);
-			$params = $this->get_params($tag, $description, $allowediting);
+			$params = $this->get_params($tag, $description, $editing);
 			return strtr($template, $params);
 		} elseif ($allowediting) {
 			return '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/create_desc_link').'</A>';
@@ -148,7 +154,7 @@ class qa_tag_descriptions_widget {
 
 	}
 
-	private function get_params($tag, $description, $allowediting)
+	private function get_params($tag, $description, $editing)
 	{
 
 		$title=qa_db_tagmeta_get($tag, 'title');
@@ -161,12 +167,6 @@ class qa_tag_descriptions_widget {
 			$imageurl = $default_image;
 		}
 		$similar_tag=$this->get_similar_tag($tag);
-		$editurlhtml=qa_path_html('tag-edit/'.$tag);
-		if ($allowediting) {
-			$editing = '<A HREF="'.$editurlhtml.'">'.qa_lang_html('plugin_tag_desc/edit').'</A>';
-		} else {
-			$editing = '';
-		}
 		$dates = tag_desc_db::get_recent_tag_date($tag);
 		$recent_date = @$dates['prefix'].@$dates['data'].@$dates['suffix'];
 		return array(
