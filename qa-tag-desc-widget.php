@@ -20,9 +20,11 @@ class qa_tag_descriptions_widget {
 
 		$parts=explode('/', $request);
 		$tag=$parts[1];
-
-		$html = $this->get_tag_description($tag);
-		$themeobject->output($html);
+		$start = qa_get_start();
+		if ($start <= 0) {
+			$html = $this->get_tag_description($tag);
+			$themeobject->output($html);
+		}
 	}
 
 	function option_default($option)
